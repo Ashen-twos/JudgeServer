@@ -201,7 +201,10 @@ class JudgeClient(object):
                 indentSize = self._extra_config["format"]["indent_size"]
                 leftBigPara = self._extra_config["format"]["left_big_para"]
                 res = exjudger.judge(self._src, indentSize, leftBigPara)
-                result["extra"].append({"name":"format", "pass":res=="success", "info":res})
+                status = _judger.RESULT_WRONG_ANSWER
+                if res == "success":
+                    status = _judger.RESULT_SUCCESS
+                result["extra"].append({"name":"format", "result":status, "info":res})
         return result
 
     def __getstate__(self):
