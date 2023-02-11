@@ -11,6 +11,7 @@ import psutil
 from config import TEST_CASE_DIR, JUDGER_RUN_LOG_PATH, RUN_GROUP_GID, RUN_USER_UID, SPJ_EXE_DIR, SPJ_USER_UID, SPJ_GROUP_GID, RUN_GROUP_GID
 from exception import JudgeClientError
 from utils import ProblemIOMode
+import ExtraJudger.binding.exjudger as exjudger
 
 SPJ_WA = 1
 SPJ_AC = 0
@@ -23,7 +24,7 @@ def _run(instance, test_case_file_id):
 
 class JudgeClient(object):
     def __init__(self, run_config, exe_path, max_cpu_time, max_memory, test_case_dir,
-                 submission_dir, spj_version, spj_config, io_mode, output=False):
+                 submission_dir, spj_version, spj_config, io_mode, src, output=False, extra_config=None):
         self._run_config = run_config
         self._exe_path = exe_path
         self._max_cpu_time = max_cpu_time
@@ -31,6 +32,8 @@ class JudgeClient(object):
         self._max_real_time = self._max_cpu_time * 3
         self._test_case_dir = test_case_dir
         self._submission_dir = submission_dir
+        self._extra_config = extra_config
+        self._src = src
 
         self._pool = Pool(processes=psutil.cpu_count())
         self._test_case_info = self._load_test_case_info()
@@ -178,15 +181,27 @@ class JudgeClient(object):
 
     def run(self):
         tmp_result = []
-        result = []
+        base = []
+        extra = []
+        result = {"base": base, "extra": extra}
         for test_case_file_id, _ in self._test_case_info["test_cases"].items():
             tmp_result.append(self._pool.apply_async(_run, (self, test_case_file_id)))
         self._pool.close()
         self._pool.join()
+        isAllPass = True
         for item in tmp_result:
             # exception will be raised, when get() is called
             # # http://stackoverflow.com/questions/22094852/how-to-catch-exceptions-in-workers-in-multiprocessing
-            result.append(item.get())
+            result["base"].append(item.get())
+            if result["base"][-1]["result"] != _judger.RESULT_SUCCESS:
+                isAllPass = False 
+        
+        if isAllPass and not self._extra_config is None:
+            if "format" in self._extra_config:
+                indentSize = self._extra_config["format"]["indent_size"]
+                leftBigPara = self._extra_config["format"]["left_big_para"]
+                res = exjudger.judge(self._src, indentSize, leftBigPara)
+                result["extra"].append({"name":"format", "pass":res=="success", "info":res})
         return result
 
     def __getstate__(self):
