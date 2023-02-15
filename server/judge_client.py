@@ -197,14 +197,30 @@ class JudgeClient(object):
                 isAllPass = False 
         
         if isAllPass and not self._extra_config is None:
+            ex_judger = exjudger.ExtraJudger(self._src)
             if "format" in self._extra_config:
-                indentSize = self._extra_config["format"]["indent_size"]
-                leftBigPara = self._extra_config["format"]["left_big_para"]
-                res = exjudger.judge(self._src, indentSize, leftBigPara)
-                status = _judger.RESULT_WRONG_ANSWER
-                if res == "success":
-                    status = _judger.RESULT_SUCCESS
-                result["extra"].append({"name":"format", "result":status, "info":res})
+                if self._extra_config["format"]["enable"]:
+                    indentSize = self._extra_config["format"]["indent_size"]
+                    leftBigPara = self._extra_config["format"]["left_big_para"]
+                    ex_judger.FormatJudge(indentSize, leftBigPara)
+                    res = ex_judger.GetResult()
+                    status = _judger.RESULT_WRONG_ANSWER
+                    if res == "success":
+                        status = _judger.RESULT_SUCCESS
+                    result["extra"].append({"name":"format", "result":status, "info":res})
+            if "function" in self._extra_config:
+                if self._extra_config["function"]["enable"]:
+                    funclist = self._extra_config["function"]["function_list"]
+                    funcs = ""
+                    for func in funclist:
+                        funcs += " " + func
+                    ex_judger.FuncJudge(funcs)
+                    res = ex_judger.GetResult()
+                    status = _judger.RESULT_WRONG_ANSWER
+                    if res == "success":
+                        status = _judger.RESULT_SUCCESS
+                    result["extra"].append({"name":"function", "result":status, "info":res})
+                
         return result
 
     def __getstate__(self):
