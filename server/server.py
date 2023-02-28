@@ -12,7 +12,6 @@ from config import (JUDGER_WORKSPACE_BASE, SPJ_SRC_DIR, SPJ_EXE_DIR, COMPILER_US
 from exception import TokenVerificationFailed, CompileError, SPJCompileError, JudgeClientError
 from judge_client import JudgeClient
 from utils import server_info, logger, token, ProblemIOMode
-import ExtraJudger.binding.exjudger as exjudger
 
 app = Flask(__name__)
 DEBUG = os.environ.get("judger_debug") == "1"
@@ -59,7 +58,7 @@ class JudgeServer:
     @classmethod
     def judge(cls, language_config, src, max_cpu_time, max_memory, test_case_id=None, test_case=None,
               spj_version=None, spj_config=None, spj_compile_config=None, spj_src=None, output=False,
-              io_mode=None, extra_config=None):
+              io_mode=None, extra_config=None, raw_code=None):
         if not io_mode:
             io_mode = {"io_mode": ProblemIOMode.standard}
 
@@ -149,7 +148,8 @@ class JudgeServer:
                                        output=output,
                                        io_mode=io_mode,
                                        extra_config=extra_config,
-                                       src=src)
+                                       src=src,
+                                       raw_code=raw_code)
             run_result = judge_client.run()
 
             return run_result
@@ -179,7 +179,7 @@ class JudgeServer:
             raise SPJCompileError(e.message)
         return "success"
 
-    @classmethod
+"""     @classmethod
     def exjudge(cls, src, config):
         test_cases = []
         if "format" in config:
@@ -187,12 +187,12 @@ class JudgeServer:
             leftBigPara = config["format"]["leftBigPara"]
             result = exjudger.judge(src, indentSize, leftBigPara)
             test_cases.append({"name":"format", "pass":result=="success", "info":result})
-        return test_cases
+        return test_cases """
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>', methods=["POST"])
 def server(path):
-    if path in ("judge", "ping", "compile_spj", "exjudge"):
+    if path in ("judge", "ping", "compile_spj"):
         _token = request.headers.get("X-Judge-Server-Token")
         try:
             if _token != token:
@@ -201,6 +201,7 @@ def server(path):
                 data = request.json
             except Exception:
                 data = {}
+            print(data)
             ret = {"err": None, "data": getattr(JudgeServer, path)(**data)}
         except (CompileError, TokenVerificationFailed, SPJCompileError, JudgeClientError) as e:
             logger.exception(e)

@@ -10,7 +10,7 @@ RUN buildDeps='software-properties-common git libtool cmake python-dev python3-p
     update-alternatives --install  /usr/bin/gcc gcc /usr/bin/gcc-9 90 && \
     update-alternatives --install  /usr/bin/g++ g++ /usr/bin/g++-9 90 && \
     pip3 install -i https://mirrors.aliyun.com/pypi/simple/ -I --no-cache-dir psutil gunicorn flask requests idna && \
-    cd /tmp && git clone -b newnew  --depth 1 https://gitee.com/qduoj/Judger.git && cd Judger && \
+    cd /tmp && git clone -b newnew  --depth 1 https://github.com/Ashen-twos/Judger.git && cd Judger && \
     mkdir build && cd build && cmake .. && make && make install && cd ../bindings/Python && python3 setup.py install && \
     mkdir -p /code && \
     cd /code && git clone https://github.com/Ashen-twos/ExtraJudger.git && cd ExtraJudger && bash build.sh && \

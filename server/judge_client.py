@@ -24,7 +24,7 @@ def _run(instance, test_case_file_id):
 
 class JudgeClient(object):
     def __init__(self, run_config, exe_path, max_cpu_time, max_memory, test_case_dir,
-                 submission_dir, spj_version, spj_config, io_mode, src, output=False, extra_config=None):
+                 submission_dir, spj_version, spj_config, io_mode, src, output=False, extra_config=None, raw_code=None):
         self._run_config = run_config
         self._exe_path = exe_path
         self._max_cpu_time = max_cpu_time
@@ -34,6 +34,7 @@ class JudgeClient(object):
         self._submission_dir = submission_dir
         self._extra_config = extra_config
         self._src = src
+        self._raw_src = raw_code
 
         self._pool = Pool(processes=psutil.cpu_count())
         self._test_case_info = self._load_test_case_info()
@@ -197,7 +198,10 @@ class JudgeClient(object):
                 isAllPass = False 
         
         if isAllPass and not self._extra_config is None:
-            ex_judger = exjudger.ExtraJudger(self._src)
+            if self._raw_src:
+                ex_judger = exjudger.ExtraJudger(self._raw_src)
+            else:
+                ex_judger = exjudger.ExtraJudger(self._src)
             if "format" in self._extra_config:
                 if self._extra_config["format"]["enable"]:
                     indentSize = self._extra_config["format"]["indent_size"]
