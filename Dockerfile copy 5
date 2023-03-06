@@ -1,15 +1,21 @@
-FROM ubuntu:20.04
+FROM ubuntu:18.04
 
 COPY build/java_policy /etc
 RUN sed -E -i -e 's/(archive|ports).ubuntu.com/mirrors.aliyun.com/g' -e '/security.ubuntu.com/d' /etc/apt/sources.list
 ENV DEBIAN_FRONTEND=noninteractive
-RUN buildDeps='software-properties-common git libtool cmake python-dev python3-pip libseccomp-dev curl' && \
+RUN buildDeps='software-properties-common git libtool cmake python-dev python3-pip python-pip libseccomp-dev curl' && \
     apt-get update && apt-get install -y python python3 python-pkg-resources python3-pkg-resources $buildDeps && \
     add-apt-repository ppa:ubuntu-toolchain-r/test && \
+    add-apt-repository -y ppa:deadsnakes/ppa && apt-get update && apt-get install -y python3.8 && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 2 && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 99 && \
+    apt remove -y python3-pkg-resources software-properties-common python-dev python3-pip && \
+    apt install -y software-properties-common python3-pkg-resources python-dev python3-pip && \
     apt-get update && apt-get install -y  gcc-9 g++-9 swig && \
     update-alternatives --install  /usr/bin/gcc gcc /usr/bin/gcc-9 90 && \
     update-alternatives --install  /usr/bin/g++ g++ /usr/bin/g++-9 90 && \
-    pip3 install psutil gunicorn flask requests idna && \
+    pip3 install -y markupsafe && \
+    pip3 install -i https://mirrors.aliyun.com/pypi/simple/ -I --no-cache-dir  psutil gunicorn flask requests idna && \
     cd /tmp && git clone -b newnew  --depth 1 https://github.com/Ashen-twos/Judger.git && cd Judger && \
     mkdir build && cd build && cmake .. && make && make install && cd ../bindings/Python && python3 setup.py install && \
     mkdir -p /code && \

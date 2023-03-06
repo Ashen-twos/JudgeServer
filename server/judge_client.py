@@ -224,7 +224,19 @@ class JudgeClient(object):
                     if res == "success":
                         status = _judger.RESULT_SUCCESS
                     result["extra"].append({"name":"function", "result":status, "info":res})
-                
+            
+            if "memory" in self._extra_config:
+                if self._extra_config["memory"]["enable"]:
+                    paralist = self._extra_config["memory"]["parameter"]
+                    parameter = ""
+                    for para in paralist:
+                        parameter += " " + para
+                    ex_judger.MemoryJudge(parameter)
+                    res = ex_judger.GetResult()
+                    status = _judger.RESULT_WRONG_ANSWER
+                    if res == "success":
+                        status = _judger.RESULT_SUCCESS
+                    result["extra"].append({"name":"memory", "result":status, "info":res})
         return result
 
     def __getstate__(self):
