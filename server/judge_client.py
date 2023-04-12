@@ -178,7 +178,7 @@ class JudgeClient(object):
             except Exception:
                 pass
 
-        return run_result
+        return run_result      
 
     def run(self):
         tmp_result = []
@@ -206,19 +206,28 @@ class JudgeClient(object):
                 if self._extra_config["format"]["enable"]:
                     indentSize = self._extra_config["format"]["indent_size"]
                     leftBigPara = self._extra_config["format"]["left_big_para"]
-                    ex_judger.FormatJudge(indentSize, leftBigPara)
+                    commaSpace = self._extra_config["format"]["comma_space"]
+                    maxStatement = self._extra_config["format"]["max_statement"]
+                    ex_judger.FormatJudge(indentSize, leftBigPara,commaSpace,maxStatement)
                     res = ex_judger.GetResult()
                     status = _judger.RESULT_WRONG_ANSWER
                     if res == "success":
                         status = _judger.RESULT_SUCCESS
                     result["extra"].append({"name":"format", "result":status, "info":res})
+                    
             if "function" in self._extra_config:
                 if self._extra_config["function"]["enable"]:
-                    funclist = self._extra_config["function"]["function_list"]
-                    funcs = ""
-                    for func in funclist:
-                        funcs += " " + func
-                    ex_judger.FuncJudge(funcs)
+                    black_list = self._extra_config["function"]["black_list"]
+                    white_list = self._extra_config["function"]["white_list"]
+                    max_statement = self._extra_config["function"]["max_statement"]
+                    disableIO = self._extra_config["function"]["disableIO"]
+                    funcs_black = ""
+                    funcs_white = ""
+                    for func in black_list:
+                        funcs_black += " " + func
+                    for func in white_list:
+                        funcs_white += " " + func
+                    ex_judger.FuncJudge(funcs_black, funcs_white, max_statement, disableIO)
                     res = ex_judger.GetResult()
                     status = _judger.RESULT_WRONG_ANSWER
                     if res == "success":
@@ -227,16 +236,48 @@ class JudgeClient(object):
             
             if "memory" in self._extra_config:
                 if self._extra_config["memory"]["enable"]:
-                    paralist = self._extra_config["memory"]["parameter"]
+                    white_list = self._extra_config["memory"]["white_list"]
+                    check_ptr_free = self._extra_config["memory"]["check_ptr_free"]
                     parameter = ""
-                    for para in paralist:
+                    for para in white_list:
                         parameter += " " + para
-                    ex_judger.MemoryJudge(parameter)
+                    ex_judger.MemoryJudge(parameter, check_ptr_free)
                     res = ex_judger.GetResult()
                     status = _judger.RESULT_WRONG_ANSWER
                     if res == "success":
                         status = _judger.RESULT_SUCCESS
                     result["extra"].append({"name":"memory", "result":status, "info":res})
+            
+            if "style" in self._extra_config:
+                if self._extra_config["style"]["enable"]:
+                    global_prefix = self._extra_config["style"]["global_prefix"]
+                    white_list = self._extra_config["style"]["white_list"]
+                    func_naming = self._extra_config["style"]["func_naming"]
+                    global_naming = self._extra_config["style"]["global_naming"]
+                    local_naming = self._extra_config["style"]["local_naming"]
+                    single_name = self._extra_config["style"]["single_name"]
+                    
+                    white = ""
+                    for item in white_list:
+                        white += " " + item
+                    ex_judger.StyleJudge(global_prefix, white, func_naming, global_naming, local_naming, single_name)
+                    res = ex_judger.GetResult()
+                    status = _judger.RESULT_WRONG_ANSWER
+                    if res == "success":
+                        status = _judger.RESULT_SUCCESS
+                    result["extra"].append({"name":"style", "result":status, "info":res})
+            
+            if "runtime" in self._extra_config:
+                if self._extra_config["runtime"]["enable"]:
+                    status = _judger.RESULT_SUCCESS
+                    if max([x["cpu_time"] for x in result["base"]]) > self._extra_config["runtime"]["limit"]:
+                        status = _judger.RESULT_WRONG_ANSWER
+                    if status == _judger.RESULT_SUCCESS:
+                        res = "success"
+                    else:
+                        res = "time limit:"+str(self._extra_config["runtime"]["limit"])
+                    result["extra"].append({"name":"runtime", "result":status, "info":res})
+                        
         return result
 
     def __getstate__(self):
