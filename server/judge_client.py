@@ -270,12 +270,14 @@ class JudgeClient(object):
             if "runtime" in self._extra_config:
                 if self._extra_config["runtime"]["enable"]:
                     status = _judger.RESULT_SUCCESS
-                    if max([x["cpu_time"] for x in result["base"]]) > self._extra_config["runtime"]["limit"]:
+                    if max([x["cpu_time"] for x in result["base"]]) > self._extra_config["runtime"]["time"]:
                         status = _judger.RESULT_WRONG_ANSWER
-                    if status == _judger.RESULT_SUCCESS:
-                        res = "success"
+                        res = "time limit:"+str(self._extra_config["runtime"]["time"])
+                    elif max([x["memory"] for x in result["base"]]) > self._extra_config["runtime"]["memory"]*1024*1024:
+                        status = _judger.RESULT_WRONG_ANSWER
+                        res = "memory limit:"+str(self._extra_config["runtime"]["memory"])
                     else:
-                        res = "time limit:"+str(self._extra_config["runtime"]["limit"])
+                        res = 'success'
                     result["extra"].append({"name":"runtime", "result":status, "info":res})
                         
         return result
