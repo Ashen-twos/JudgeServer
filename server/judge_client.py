@@ -208,12 +208,12 @@ class JudgeClient(object):
                     leftBigPara = self._extra_config["format"]["left_big_para"]
                     commaSpace = self._extra_config["format"]["comma_space"]
                     maxStatement = self._extra_config["format"]["max_statement"]
-                    ex_judger.FormatJudge(indentSize, leftBigPara,commaSpace,maxStatement)
+                    passed = ex_judger.FormatJudge(indentSize, leftBigPara,commaSpace,maxStatement)
                     res = ex_judger.GetResult()
                     status = _judger.RESULT_WRONG_ANSWER
                     if res == "success":
                         status = _judger.RESULT_SUCCESS
-                    result["extra"].append({"name":"format", "result":status, "info":res})
+                    result["extra"].append({"name":"format", "result":status, "info":res, "pass": passed})
                     
             if "function" in self._extra_config:
                 if self._extra_config["function"]["enable"]:
@@ -227,12 +227,12 @@ class JudgeClient(object):
                         funcs_black += " " + func
                     for func in white_list:
                         funcs_white += " " + func
-                    ex_judger.FuncJudge(funcs_black, funcs_white, max_statement, disableIO)
+                    passed = ex_judger.FuncJudge(funcs_black, funcs_white, max_statement, disableIO)
                     res = ex_judger.GetResult()
                     status = _judger.RESULT_WRONG_ANSWER
                     if res == "success":
                         status = _judger.RESULT_SUCCESS
-                    result["extra"].append({"name":"function", "result":status, "info":res})
+                    result["extra"].append({"name":"function", "result":status, "info":res, "pass": passed})
             
             if "memory" in self._extra_config:
                 if self._extra_config["memory"]["enable"]:
@@ -241,12 +241,12 @@ class JudgeClient(object):
                     parameter = ""
                     for para in white_list:
                         parameter += " " + para
-                    ex_judger.MemoryJudge(parameter, check_ptr_free)
+                    passed = ex_judger.MemoryJudge(parameter, check_ptr_free)
                     res = ex_judger.GetResult()
                     status = _judger.RESULT_WRONG_ANSWER
                     if res == "success":
                         status = _judger.RESULT_SUCCESS
-                    result["extra"].append({"name":"memory", "result":status, "info":res})
+                    result["extra"].append({"name":"memory", "result":status, "info":res, "pass": passed})
             
             if "style" in self._extra_config:
                 if self._extra_config["style"]["enable"]:
@@ -260,25 +260,29 @@ class JudgeClient(object):
                     white = ""
                     for item in white_list:
                         white += " " + item
-                    ex_judger.StyleJudge(global_prefix, white, func_naming, global_naming, local_naming, single_name)
+                    passed = ex_judger.StyleJudge(global_prefix, white, func_naming, global_naming, local_naming, single_name)
                     res = ex_judger.GetResult()
                     status = _judger.RESULT_WRONG_ANSWER
                     if res == "success":
                         status = _judger.RESULT_SUCCESS
-                    result["extra"].append({"name":"style", "result":status, "info":res})
+                    result["extra"].append({"name":"style", "result":status, "info":res, "pass": passed})
             
             if "runtime" in self._extra_config:
                 if self._extra_config["runtime"]["enable"]:
                     status = _judger.RESULT_SUCCESS
+                    passed = 2
+                    res = ''
                     if max([x["cpu_time"] for x in result["base"]]) > self._extra_config["runtime"]["time"]:
                         status = _judger.RESULT_WRONG_ANSWER
-                        res = "time limit:"+str(self._extra_config["runtime"]["time"])
-                    elif max([x["memory"] for x in result["base"]]) > self._extra_config["runtime"]["memory"]*1024*1024:
+                        res += "time limit:"+str(self._extra_config["runtime"]["time"])
+                        passed -= 1
+                    if max([x["memory"] for x in result["base"]]) > self._extra_config["runtime"]["memory"]*1024*1024:
                         status = _judger.RESULT_WRONG_ANSWER
-                        res = "memory limit:"+str(self._extra_config["runtime"]["memory"])
+                        res += "memory limit:"+str(self._extra_config["runtime"]["memory"])
+                        passed -= 1
                     else:
                         res = 'success'
-                    result["extra"].append({"name":"runtime", "result":status, "info":res})
+                    result["extra"].append({"name":"runtime", "result":status, "info":res, "pass": passed})
                         
         return result
 
